@@ -9,15 +9,14 @@ import { TaskModule } from './task/task.module';
   imports: [
     ConfigModule.forRoot({
       load: [configuration],
+      isGlobal: true,
     }),
-    MongooseModule.forRootAsync({
-      imports: [ConfigModule],
-      useFactory: (configService: ConfigService) => ({
-        uri: configService.get<string>('mongo.uri'),
-        dbName: configService.get<string>('mongo.db'),
-      }),
-      inject: [ConfigService],
-    }),
+    MongooseModule.forRoot(
+			`mongodb+srv://${process.env.DATABASE_USER}:${process.env.DATABASE_PASS}@cluster0.pgvfszf.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`,
+			{
+				dbName: process.env.DATABASE_NAME,
+			},
+		),
     BullModule.forRootAsync({
       imports: [ConfigModule],
       useFactory: (configService: ConfigService) => ({
