@@ -1,6 +1,8 @@
-import { Controller, Post, Body, Ip, BadRequestException } from '@nestjs/common';
+import { Controller, Post, Body } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { TaskService } from './task.service';
+import { CreateTaskRequestDto } from './dtos/create-task.reqeust.dto';
+// import { Task } from './schemas/task.schema';
 
 @Controller('tasks')
 export class TaskController {
@@ -11,23 +13,8 @@ export class TaskController {
 
   @Post()
   async createTask(
-    @Body('collection') collection: string,
-    @Body('uniqueId') uniqueId: string,
-    @Body('action') action: string,
-    @Body('triggerAt') triggerAt: string,
-    @Ip() ip: string,
-  ) {
-    const allowedIps = this.configService.get<string[]>('server.allowedIps');
-    if (!allowedIps.includes(ip)) {
-      throw new BadRequestException('IP not allowed');
-    }
-
-    const triggerDate = new Date(triggerAt);
-    if (isNaN(triggerDate.getTime())) {
-      throw new BadRequestException('Invalid triggerAt date');
-    }
-
-    await this.taskService.createTask(collection, uniqueId, action, triggerDate);
-    return { message: 'Task scheduled successfully' };
+    @Body() createDto: CreateTaskRequestDto,
+  ): Promise<any> {
+    return this.taskService.createTask(createDto);
   }
 }
