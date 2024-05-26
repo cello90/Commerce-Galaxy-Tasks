@@ -6,6 +6,11 @@ import { Queue } from 'bull';
 import { Task, TaskDocument } from './schemas/task.schema';
 import { CreateTaskRequestDto } from './dtos/create-task.reqeust.dto';
 
+// TO DO
+// - Implement a collection on Redis to store mongoID's for the task and associated jobIDs
+// - On create, create a new entry in the above collection
+// - On delete, use the above collection to find the jobID and delete the job
+
 @Injectable()
 export class TaskService implements OnModuleInit {
   private readonly logger = new Logger(TaskService.name);
@@ -16,21 +21,17 @@ export class TaskService implements OnModuleInit {
   ) {}
 
   async onModuleInit() {
-    // await this.loadPendingTasks();
+    await this.loadPendingTasks();
   }
 
-  // async loadPendingTasks() {
-  //   const now = new Date();
-  //   const pendingTasks = await this.taskModel.find({ triggerAt: { $gte: now } }).exec();
-  //   for (const task of pendingTasks) {
-  //     await this.scheduleTask(task);
-  //   }
-  // }
+  async loadPendingTasks() {
+    
+  }
 
   async scheduleTask(task: CreateTaskRequestDto) {
     const delay = task.delay;
     const job = await this.taskQueue.add(
-      `${task.collection}-${task.itemId}`,
+      `executeTask`,
       { 
         collection: task.collection,
         itemId: task.itemId,
@@ -48,8 +49,17 @@ export class TaskService implements OnModuleInit {
     return task.save();
   }
 
-  async completeTask(taskId: string) {
+  async completeTask(jobId: string) {
     //await this.taskModel.findByIdAndDelete(taskId).exec();
-    this.logger.log(`Completed and removed task ${taskId}`);
+    this.logger.log(`Completed and removed task ${jobId}`);
+  }
+
+  async deleteTask(taskId: string) {
+    this.logger.log(`Deleting task ${taskId}. Task count: ${await this.taskQueue.count()}`);
+    const task = await this.taskModel.findById(taskId).exec();
+    const job = await this.taskQueue.getJob(task.jobId)
+    await job.remove();
+    this.logger.log(`Deleted task ${taskId}. Task count: ${await this.taskQueue.count()}`);
+    return this.taskModel.findByIdAndDelete(taskId).exec();
   }
 }

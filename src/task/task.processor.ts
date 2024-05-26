@@ -11,13 +11,13 @@ export class TaskProcessor {
 
   @Process('executeTask')
   async handleExecuteTask(job: Job) {
-    const { taskId } = job.data;
-    this.logger.log(`Executing task ${taskId}`);
+    const { collection, itemId, action } = job.data;
+    this.logger.log(`Executing task ${action}`);
     
     // Perform the action on the MongoDB collection as needed
     // Example: await someMongoService.performAction(task.collection, task.uniqueId, task.action);
 
     // Complete the task
-    await this.taskService.completeTask(taskId);
+    await this.taskService.completeTask(`${collection}-${itemId}`);
   }
 }
